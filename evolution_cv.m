@@ -1,4 +1,4 @@
-function phi = EVOLUTION_CV(I, phi0, mu, nu, lambda_1, lambda_2, delta_t, epsilon, numIter);
+function phi = EVOLUTION_CV(I, phi0, mu, nu,lambda, lambda_1,lambda_2, delta_t, epsilon, numIter);
 %   evolution_withoutedge(I, phi0, mu, nu, lambda_1, lambda_2, delta_t, delta_h, epsilon, numIter);
 %   input: 
 %       I: input image
@@ -24,12 +24,19 @@ phi = BoundMirrorExpand(phi0);
 
 for k = 1 : numIter
     phi = BoundMirrorEnsure(phi);
-    delta_h = Delta(phi,epsilon);
+    laplacian_phi = laplacian(phi);
+    g = edge_function(I,2);
+    [vx,vy] = gradient(g);
+    f=(0.5/epsilon)*(1+cos(pi*phi/epsilon)); %¼ÆËãdeltaº¯Êý
+    f=f.*(phi<=epsilon)&(phi>=-epsilon);
+    l_part = L_part(g,f,phi);
+   % delta_h = Delta(phi,epsilon);
     Curv = curvature(phi);
     [C1,C2] = binaryfit(phi,I,epsilon);
     
     % updating the phi function
-    phi=phi+delta_t*delta_h.*(mu*Curv-nu-lambda_1*(I-C1).^2+lambda_2*(I-C2).^2);    
+    phi=phi+delta_t*(mu*(laplacian_phi-Curv)+lambda*l_part+nu*g.*f);
+   % phi=phi+delta_t*delta_h.*(mu*Curv-nu-lambda_1*(I-C1).^2+lambda_2*(I-C2).^2);    
 end
 phi = BoundMirrorShrink(phi); % È¥µôÑÓÍØµÄ±ßÔµ
 
